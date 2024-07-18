@@ -1,0 +1,279 @@
+{: RETURN "<?xml version="+ chr(34) + "1.0" + chr(34) + " encoding=" + chr(34) + "utf-8"+ chr(34) + "?>";}
+
+{:  /************************************ CQM , début :le 22/08/2023, MISPL d'EN-TETE LDT ONCOGENETIQUE (associé au "BB_LDT_SSA_ONCOGENETIQ" en section d'action ****************************/
+STRING sXML;
+   STRING sTraca1, sTraca2,sTraca3,sTraca4,sLOT,sPLAN; 
+
+   STRING sI, sL, sO, sRC, Sep, sHBT, sCBT, sTABH, sTABV, sI2,e1,e2,e3,e4,e5,e6,e7,e8,e9,e10,e20,e30,e40,e50,p5,p10,p20,p30,p40,p50,sDg,chk ; /* Variables ASCII */
+   STRING sCount, sWlt, sWltBIS, sUser, sLN, sFN, sRecFinal1, sRecFinal2, sTab, sTab2;                                                        /* Variables communes */
+
+   STRING sHIFIMSI, sH20MSI, sCustomMSI, sTxt1MSI, sPanelMSI1, sPanelMSI2, sPanelMSI3, sPanelMSI4, sVerifMSI, sVerifMSI2;                     /* Variables recette MSI */
+   FRACTIONAL fCoefMSI, fVerifMSI, fHIFIMSI, fH20MSI, fCustomMSI; 
+
+   STRING sHIFIplus, sH20plus, sCustomplus, sPanelPlus1, sPanelPlus2, sPanelPlus3, sPanelPlus4, sVerifPlus,sVerifPlus2;                       /* Variables recette Onco plus  */
+   FRACTIONAL fCoefplus, fHIFIplus, fH20plus, fCustomplus;
+
+   INTEGER iCount;
+/*------------------------------------------------------------------------------- Identification et tracabilité de la liste de travail ---------------------------------------------------------------------*/
+sUser := .CreationUser.LastName;
+sUser := " Générée par : " +  ToUpper(Substr(.CreationUser.FirstName,1,1))+"."+ ToUpper(Substr(sUser,1,1)) + ToLower(Substr(sUser,2,15));
+sWlt := Substr(.Name,4,12);
+sWltBIS := sWlt;
+sWLTBIS := "Liste de travail :" + sWLT + "." + sUser + ". " + DateTimeToString(.CreationTime,"%d/%m/%Y");
+
+/*-------------------------------------------------------------- Table ASCII - Table Fill - Variables de correction Ne pas toucher -----------------------------------------------------------------*/
+e1 := Fill(" ",1);
+e2 := Fill(" ",2);
+e3 := Fill(" ",3);
+e4 := e2 + e2;
+e5 := e2 + e3;
+e6 := e3 + e3;
+e7 := e3 + e4;
+e8 := e4 + e4;
+e9 := e4 + e5;
+e10:= e5 + e5;
+e20:= e10 + e10;
+e30:= e10 + e20;
+e40:= e10 + e30;
+e50:= e10 + e40;
+p5:= Fill(".",5);
+p10:= Fill(".",10);
+p20:= p10 + p10;
+p30:= p20 + p10;
+p40:= p20 + p20;
+p50:= p20 + p30;
+
+sI   := chr(124);   
+sI2  := chr(124);         
+sL   := chr(166);            
+sO   := chr(149);           
+sRC  := chr(13);            
+Sep  := chr(45);          
+sHBT := chr(61);            
+sCBT := chr(166)+ chr(166); 
+sTABH:= chr(9);            
+sTABV:= chr(11);
+sDg  := chr(176)+"c";
+chk  := chr(91) + "  " + chr(93) + " ";
+
+/*---------------------------------------------------------------------------------- Détermination des coefficients multiplicateurs-------------------------------------------------------------------------*/
+iCount := .EntryCount;
+
+/* PCR BRCA */
+
+/* PCR MSI ET plus + */
+fCoefMSI := iCount + 1;
+fCoefplus := iCount + 1;
+
+/*----------------------------------CAS1 : Montage et développement de la recette PCR MSI  ------------------------*/
+
+IF LOOKUP(sWlt,"PCR-MSI","") > 0 THEN
+/*--------------------------- REACTIFS DE PCR ---------------------------------*/
+fHIFIMSI := 4.0 * fCoefMSI;
+sHIFIMSI := FractionalToString(fHIFIMSI,"%3.1f") + " µl" ;
+
+fH20MSI := 4.0 * fCoefMSI;
+sH20MSI := FractionalToString(fH20MSI,"%3.1f") + " µl" ;
+
+fCustomMSI := 10.0 * fCoefMSI ;
+sCustomMSI := FractionalToString(fCustomMSI, "%3.1f") + " µl";
+
+sVerifMSI  := e4 + FractionalToString(((fHIFIMSI + fH20MSI + fCustomMSI)/fCoefMSI), "%4.1f") + e4 ;
+sVerifMSI2 := FractionalToString((fHIFIMSI + fH20MSI + fCustomMSI),"%4.1f") + " µl";
+
+/*--------------------------- Textes PCR MSI ---------------------------------*/
+sPanelMSI1 := "Utiliser le panel MSI " ;
+sPanelMSI2 := "Ion Ampliseq " + chr(153)+ " Custom MSI à aliquoter en 100 µL";
+sPanelMSI3 := " 5X Ion ampliseq HIFI MIX";
+sPanelMSI4 := " Ion Ampliseq Custom MSI";
+
+/*--------------------------- Montage des tableaux de recette PCR et Programme Thermo ---------------------------------*/
+
+sTab := "";
+sTab := sTab + cPad(sPanelMSI1,75," ")                                                           + sRC;
+sTab := sTab + cPad(sPanelMSI2,58," ")                                                           + sRC;
+sTab := sTab + cPad(Fill("_",44),46," ")                                                         + sRC;
+sTab := sTab + cPad("Préparer le MIX suivant: ",75," ")                            + sRC + sRC;
+
+
+sTab := sTab + sO + " REACTIFS (µl) "     + e10+e8   + sI + " Vol/puits "  + sI +  " Vol total "      + sRC;
+sTab := sTab + LPad(Fill(Sep,75),75,"")                                                               + sRC;
+sTab := sTab + sO + sPanelMSI3            + e2       + sI + e4 + "4.00" + e4 + sI + e2 + sHIFIMSI     + sRC;
+sTab := sTab + LPad(Fill(Sep,75),75,"")                                                               + sRC;
+sTab := sTab + sO +" H2O Nucléase Free"   + e10 +e1   + sI + e4 + "4.00" + e4 + sI + e2 + sH20MSI     + sRC;
+sTab := sTab + LPad(Fill(Sep,75),75,"")                                                               + sRC;
+sTab := sTab + sO + sPanelMSI4            + e1       + sI + e4 + "10.0" + e4 + sI + e2+ sCustomMSI    + sRC;
+sTab := sTab + LPad(Fill(Sep,75),75,"")                                                               + sRC;
+sTab := sTab + sO + "Total "              + e30 + e5 + sI +    sVerifMSI   + sI + e2 + sVerifMSI2     + sRC;                                                                   
+sTab := sTab + LPad(Fill(Sep,75),75,"")                                                               + sRC;
+sTab := sTab + sO + " Déposer 18 µL du mix par puits"                                              + sRC;
+
+sTraca1 := cPad("PREPARATION PCR MSI PIECE 616",70," ") ;
+sTraca2 := cPad("PCR AMPLIFICATION PIECE 618",70," ") ;
+
+sTab2 := sRC;
+sTab2 := sTab2 + e1 + sO + " Ajouter 2 µL de dilution d'ADN patient à 5ng/µl/puits"                           + sRC;
+sTab2 := sTab2 + e1 + sO + " Ajouter 2 µL de dilution C+ et STD à 2ng/µl/puits"                               + sRC;
+sTab2 := sTab2 + e1 + sO + " Lancer la PCR selon le programme ci-dessous :"                                   + sRC;
+sTab := sTab + cPad(Fill("_",44),46," ")                                                                         + sRC;
+sTab2 := sTab2 + e10 + sI + LPad(Fill(Sep,47),48," ")                      + sI                                  + sRC;
+sTab2 := sTab2 + e10 + sI + " Programme PCR : ADN Oncomine "               + sI                                  + sRC;
+sTab2 := sTab2 + e10 + sI + LPad(Fill(Sep,47),48," ")                      + sI                                  + sRC;
+sTab2 := sTab2 + e10 + sI + e4 +" Température " + e4                       + sI + e8 +" Durée "+ e6 + sI         + sRC;
+sTab2 := sTab2 + e10 + sI + LPad(Fill(Sep,47),48," ")                      + sI                                  + sRC;
+sTab2 := sTab2 + e10 + sI + sO + e6 + "    99     " + sDg + e7             + sI + e8 +"02 min "+ e6 + sI         + sRC;
+sTab2 := sTab2 + e10 + sI + LPad(Fill(Sep,47),48," ")                      + sI + Fill("_",10)                   + sRC;
+sTab2 := sTab2 + e10 + sI + sO + e6 + "    99     " + sDg + e7             + sI + e8 +"15 sec "+ e6              + sRC;
+sTab2 := sTab2 + e10 + sI + LPad(Fill(Sep,47),48," ")                      + chr(125) + " 22 Cycles"             + sRC;
+sTab2 := sTab2 + e10 + sI + sO + e6 + "    60     " + sDg + e7             + sI + e8 +"04 min "+ e10+e2 + "PCR"  + sRC;
+sTab2 := sTab2 + e10 + sI + LPad(Fill(Sep,47),48," ")                      + e1 + Fill("_",10)                   + sRC;
+sTab2 := sTab2 + e10 + sI + sO + e6 + "    10     " + sDg + e7             + sI + e8 + "Infini " + e9 + sI       + sRC;
+sTab2 := sTab2 + e10 + e1 + LPad(Fill(Sep,47),48," ")                                                            + sRC;
+
+sLOT := sRC ;
+sLOT := sLOT + " " + sO + " N° de lot panel MSI : " + p50 +sRC + sRC;
+sLOT := sLOT + " " + sO + " N° de lot HIFI MIX : " + p50 ;
+
+sPLAN := sRC;
+sPLAN := sPLAN + sO + " Thermocycleur utilisé : " + e7 +chk + "PLUTON" + sRC;
+sPLAN := sPLAN + sRC;
+sPLAN := sPLAN + e50 + chk + "ATHENA" + sRC;
+sPLAN := sPLAN + sRC;
+sPLAN := sPLAN + e50 + chk + "PEGASE 2" + sRC;
+sPLAN := sPLAN + sRC;
+sPLAN := sPLAN + e50 + chk + "AUTRE : " + sRC;
+sPLAN := sPLAN + " " + cPad(Fill("_",52),52," ")                         + sRC;
+sPLAN := sPLAN + sRC ;
+sPLAN := sPLAN + sO + " Séquençage lancé semaine :" + p50 ;
+
+sRecFinal1 := sTab;
+sRecFinal2 := sTab2;
+
+sTraca3 := "Tracabilité des Réactifs ";
+sTraca4 := "Tracabilité technique - Remarques ";
+ENDIF;
+
+/*----------------------------------CAS2 : Montage et développement de la  recette PCR ONCOMINE plus+ ------------------------*/
+
+IF LOOKUP(sWlt,"PCR-ONCOMINE","") > 0 THEN
+/*--------------------------- REACTIFS DE PCR ---------------------------------*/
+
+/*--------------------------- REACTIFS DE PCR ---------------------------------*/
+fHIFIplus := 4.0 * fCoefplus;
+sHIFIplus := FractionalToString(fHIFIplus,"%3.1f") + " µl" ;
+
+fH20plus := 10.0 * fCoefplus;
+sH20plus := FractionalToString(fH20plus,"%3.1f") + " µl" ;
+
+fCustomplus := 4.0 * fCoefplus ;
+sCustomplus := FractionalToString(fCustomplus, "%3.1f") + " µl";
+
+sVerifPlus  := e4 + FractionalToString(((fHIFIplus + fH20plus + fCustomplus)/fCoefplus), "%4.1f") + e4 ;
+sVerifPlus2 := FractionalToString((fHIFIplus + fH20plus + fCustomplus),"%4.1f") + " µl";
+
+/*--------------------------- Textes PCR MSI ---------------------------------*/
+sPanelPlus1 := "Utiliser le panel Onco + " ;
+sPanelPlus2 := "Ion Ampliseq " + chr(153)+ " Onco + à aliquoter en 100 µL";
+sPanelPlus3 := " 5X Ion ampliseq HIFI MIX";
+sPanelPlus4 := " Ion Ampliseq ONCO +";
+
+/*--------------------------- Montage des tableaux de recette PCR et Programme Thermo ---------------------------------*/
+
+sTab := "";
+sTab := sTab + cPad(sPanelPlus1,75," ")                                                           + sRC;
+sTab := sTab + cPad(sPanelPlus2,58," ")                                                           + sRC;
+sTab := sTab + cPad(Fill("_",44),46," ")                                                         + sRC;
+sTab := sTab + cPad("Préparer le MIX suivant: ",75," ")                            + sRC + sRC;
+
+
+sTab := sTab + sO + " REACTIFS (µl) "     + e10+e8   + sI + " Vol/puits "  + sI +  " Vol total "      + sRC;
+sTab := sTab + LPad(Fill(Sep,75),75,"")                                                               + sRC;
+sTab := sTab + sO + sPanelPlus3            + e2       + sI + e4 + "4.00" + e4 + sI + e2 + sHIFIplus   + sRC;
+sTab := sTab + LPad(Fill(Sep,75),75,"")                                                               + sRC;
+sTab := sTab + sO +" H2O Nucléase Free"   + e10 +e1   + sI + e4 + "10.0" + e4 + sI + e2 + sH20plus    + sRC;
+sTab := sTab + LPad(Fill(Sep,75),75,"")                                                               + sRC;
+sTab := sTab + sO + sPanelPlus4           + e7     + sI + e4 + "4.00" + e4 + sI + e2+ sCustomplus     + sRC;
+sTab := sTab + LPad(Fill(Sep,75),75,"")                                                               + sRC;
+sTab := sTab + sO + "Total "              + e30 + e5 + sI +    sVerifPlus   + sI + e2 + sVerifPlus2   + sRC;                                                                   
+sTab := sTab + LPad(Fill(Sep,75),75,"")                                                               + sRC;
+sTab := sTab + sO + " Déposer 18 µL du mix par puits"                                                 + sRC;
+
+sTraca1 := cPad("PREPARATION PCR MSI PIECE 616",70," ") ;
+sTraca2 := cPad("PCR AMPLIFICATION PIECE 618",70," ") ;
+
+sTab2 := sRC;
+sTab2 := sTab2 + e1 + sO + " Ajouter 2 µL de dilution d'ADN patient à 5ng/µl/puits"                              + sRC;
+sTab2 := sTab2 + e1 + sO + " Ajouter 2 µL de dilution C+ HD200 à 2ng/µl /puits"                                  + sRC;
+sTab2 := sTab2 + e1 + sO + " Lancer la PCR selon le programme ci-dessous :"                                      + sRC;
+sTab := sTab + cPad(Fill("_",44),46," ")                                                                         + sRC;
+sTab2 := sTab2 + e1 + sO + " 5) Lancer la PCR selon le programme ci-dessous :"                                   + sRC;
+sTab2 := sTab2 + e10 + sI + LPad(Fill(Sep,47),48," ")                      + sI                                  + sRC;
+sTab2 := sTab2 + e10 + sI + " Programme PCR : ADN Oncomine "               + sI                                  + sRC;
+sTab2 := sTab2 + e10 + sI + LPad(Fill(Sep,47),48," ")                      + sI                                  + sRC;
+sTab2 := sTab2 + e10 + sI + e4 +" Température " + e4                       + sI + e8 +" Durée "+ e6 + sI         + sRC;
+sTab2 := sTab2 + e10 + sI + LPad(Fill(Sep,47),48," ")                      + sI                                  + sRC;
+sTab2 := sTab2 + e10 + sI + sO + e6 + "    99     " + sDg + e7             + sI + e8 +"02 min "+ e6 + sI         + sRC;
+sTab2 := sTab2 + e10 + sI + LPad(Fill(Sep,47),48," ")                      + sI + Fill("_",10)                   + sRC;
+sTab2 := sTab2 + e10 + sI + sO + e6 + "    99     " + sDg + e7             + sI + e8 +"15 sec "+ e6              + sRC;
+sTab2 := sTab2 + e10 + sI + LPad(Fill(Sep,47),48," ")                      + chr(125) + " 22 Cycles"             + sRC;
+sTab2 := sTab2 + e10 + sI + sO + e6 + "    60     " + sDg + e7             + sI + e8 +"04 min "+ e10+e2 + "PCR"  + sRC;
+sTab2 := sTab2 + e10 + sI + LPad(Fill(Sep,47),48," ")                      + e1 + Fill("_",10)                   + sRC;
+sTab2 := sTab2 + e10 + sI + sO + e6 + "    10     " + sDg + e7             + sI + e8 + "Infini " + e9 + sI       + sRC;
+sTab2 := sTab2 + e10 + e1 + LPad(Fill(Sep,47),48," ")                                                            + sRC;
+
+sLOT := sRC ;
+sLOT := sLOT + " " + sO + " N° de lot panel ONCO + : " + p50 +sRC + sRC;
+sLOT := sLOT + " " + sO + " N° de lot HIFI MIX : " + p50 ;
+
+sPLAN := sRC;
+sPLAN := sPLAN + sO + " Thermocycleur utilisé : " + e7 +chk + "PLUTON" + sRC;
+sPLAN := sPLAN + sRC;
+sPLAN := sPLAN + e50 + chk + "ATHENA" + sRC;
+sPLAN := sPLAN + sRC;
+sPLAN := sPLAN + e50 + chk + "PEGASE 2" + sRC;
+sPLAN := sPLAN + sRC;
+sPLAN := sPLAN + e50 + chk + "AUTRE : " + sRC;
+sPLAN := sPLAN + " " + cPad(Fill("_",52),52," ")                         + sRC;
+sPLAN := sPLAN + sRC ;
+sPLAN := sPLAN + sO + " Séquençage lancé semaine :" + p50 ;
+
+sRecFinal1 := sTab;
+sRecFinal2 := sTab2;
+
+sTraca3 := "Tracabilité des Réactifs ";
+sTraca4 := "Tracabilité technique - Remarques ";
+ENDIF;
+
+/*-------------------------------- CAS3 : Montage et développement de la  recette PCR BRCA ---------------------*/
+IF LOOKUP(sWlt,"PCR-BRCA","") > 0 THEN
+sTraca1 := "En développement";
+sTraca2 := "En développement";
+
+sRecFinal1 := "En Développement" ;
+sRecFinal2 := "En Développement"  ;
+sTraca3 := "En développement ";
+sTraca4 := "En développement";
+sLOT := "En développement";
+sPLAN := " En développement";
+ENDIF;
+
+/****************************************************************************************** Ne pas TOUCHER, partie invariable **************************************************************************/
+sXML := "";
+sXML := sXML + "<CUSTOM1>" + IfKnownString(sWLTBIS) + "</CUSTOM1>";
+sXML := sXML + "<CUSTOMTITLE1>" + sTraca3 + "</CUSTOMTITLE1>";
+sXML := sXML + "<CUSTOMTITLE2>" + sTraca4 + "</CUSTOMTITLE2>";
+sXML := sXML + "<CUSTOMMIX1>" + IfKnownString(sLOT) + "</CUSTOMMIX1>";
+sXML := sXML + "<CUSTOMMIX2>" + IfKnownString(sPLAN) + "</CUSTOMMIX2>";
+sXML := sXML + "<CUSTOM14>" + sTraca1 + "</CUSTOM14>";
+sXML := sXML + "<CUSTOM15>" + sTraca2 + "</CUSTOM15>";
+sXML := sXML + "<CUSTOM16>" + sRecFinal1 + "</CUSTOM16>";
+sXML := sXML + "<CUSTOM17>" + sRecFinal2 + "</CUSTOM17>";
+sXML := sXML + "<CUSTOMN1>" + "INFOS DOSSIER" + "</CUSTOMN1>";
+sXML := sXML + "<CUSTOMN3>" + "COPEAUX" + "</CUSTOMN3>";
+sXML := sXML + "<CUSTOMDOS1>" + "INFOS PATIENT" + "</CUSTOMDOS1>";
+sXML := sXML + "<CUSTOMCB>" + "CODE BARRE" + "</CUSTOMCB>";
+sXML := sXML + "<CUSTOM6>" + "BIOTHEQUES" + "</CUSTOM6>";
+sXML := sXML + "<CUSTOMRES>" + "REMARQUES" + "</CUSTOMRES>";
+
+RETURN sXML;
+}
