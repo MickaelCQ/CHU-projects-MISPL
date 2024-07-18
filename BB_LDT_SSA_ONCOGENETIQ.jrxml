@@ -1,0 +1,187 @@
+{: RETURN "<?xml version="+ chr(34) + "1.0" + chr(34) + " encoding=" + chr(34) + "utf-8"+ chr(34) + "?>";}
+
+/***************************************** CHU NIMES - MICKAEL  le 30/08/2023 -- MISPL SSA CORPS Maquette ONCOGENETIQUE *****************************************/
+
+{:STRING sXML, sCUST6, sCUST7, sCUSTN1, sCUSTN2, sCUSTN3, sCUSTN4, sCUSTDOS1, sCUSTDOS2, sCUSTDOS3,sCustomNAT;
+  STRING sCUSTOMDOS1, sCUSTOMDOS2, sCUSTOMDOS3, sCUSTOMN1, sCUSTOMN2, sCUSTOMN3, sCUSTOMN4, sCUSTOM6, sCUSTOM7, sCustomNATHAN;
+  STRING sListana,sBtkADN, sBtkARN, sBtkTNA, BtkSAIN, sConc, sRes, sVal, sDEFGEN, sInfo, sDDR;
+  STRING sDossier, sSpecimen, sNom, sEpouse, sSex, sIssuer, sDDN, sAge;
+  STRING sQC, sRECEP, sPREL, sDelM, sDelH, sDelJ, sTime;
+  STRING sACP, sBLOC,sTracaONCO;
+  STRING sRC, sO;
+  STRING sNUMACTION, sListNUM;
+  CORRESPONDENT cIssuer;
+  GENETICEXAM cClassG;
+  PERSON cPers;
+  OBJECT cObj;
+  ORDER cOrd;
+  FRACTIONAL fDelJ, fDelM, fDelH;
+  INTEGER i, i1, iSeq, iCaracDos;
+
+cOrd        :=.Order();
+cIssuer     := cOrd.Issuer;
+cObj		:= .Object;
+cPers		:= cObj.Person();
+cClassG := .ApproachActivity().Approach.GeneticExam ;
+
+iSeq := .SpecimenInput().Action.Procedure.SeqNo;
+sQC := IfKnownString(.Object.QCLot().Material.Description);
+
+/*-------------------------------------------------- Table ASCII -------------------------------------------------------------------------------------------------------------------------------------*/
+sRC := chr(13);
+sO  := chr(149);
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/************************************  Date de réception et Date de prélèvement ******************/
+sRECEP:= DateTimeToString(cOrd.CreationTime,"%d/%m/%Y,%Hh%Mm.");
+sPREL := DateTimeToString(cOrd.LowestObjectTime,"%d/%m/%Y,%Hh%Mm.");
+
+
+sListana    := cOrd.PropertyList(1, 5, ?, "CLASSIFICATION_GENERALE", ?);
+sDossier	:= IfKnownString(sO + " N° : " + cOrd.InternalId + sRC);
+sNom		:= sO + IfKnownString(cPers.LastName) + "-" + IfKnownString(ToLower(cPers.FirstName))+ sRC;
+sEpouse	:= IfknownString(" Epouse : " + cPers.SpouseLastName)+ sRC;
+sSex		:= sO + IfKnownString(EnumeratedToString("Sex", cPers.Sex));
+sSex        := Replace(sSex,"Female","F");
+sDDR        := " "; 
+sInfo		:= IfKnownString("Info: " + cOrd.Question);/* fait remonter le contenu du champs question Order*/
+
+sSex := Replace(Replace(Replace(Replace(sSex,"Male","M"), "Female", "F"), "Female", "F"),"Unknown","Sexe: ?");
+sIssuer	:= IfKnownString(sO + " Prescripteur: " +cIssuer.HCProvider().Mnemonic);
+sDDN		:= IfKnownString(" -Né(e) le " + DateToString(cPers.BirthDate,"%d/%m/%Y")+ ".");
+
+sNUMACTION := IfKnownString(.Attribute("Position"));
+
+/* Localisation sur le plan de plaque */
+    /* sListNUM := "";
+     sListNUM := sListNUM + "1=A1" + "|";
+     sListNUM := sListNUM + "2=A2" + "|";
+     sListNUM := sListNUM + "3=A3" + "|";
+     sListNUM := sListNUM + "4=A4" + "|";
+     sListNUM := sListNUM + "5=A5" + "|";
+     sListNUM := sListNUM + "6=A6" + "|";
+     sListNUM := sListNUM + "7=A7" + "|";
+     sListNUM := sListNUM + "8=A8" + "|";
+     sListNUM := sListNUM + "9=B1" + "|";
+     sListNUM := sListNUM + "10=B2" + "|";
+     sListNUM := sListNUM + "11=B3" + "|";
+     sListNUM := sListNUM + "12=B4" + "|";
+     sListNUM := sListNUM + "13=B5" + "|";
+     sListNUM := sListNUM + "14=B6" + "|";
+     sListNUM := sListNUM + "15=B7" + "|";
+     sListNUM := sListNUM + "16=B8" + "|";
+     sListNUM := sListNUM + "17=C1" + "|";
+     sListNUM := sListNUM + "18=C2" + "|";
+     sListNUM := sListNUM + "19=C3" + "|";
+     sListNUM := sListNUM + "20=C4" + "|";
+     sListNUM := sListNUM + "21=C5" + "|";
+     sListNUM := sListNUM + "22=C6" + "|";
+     sListNUM := sListNUM + "23=C7" + "|";
+     sListNUM := sListNUM + "24=C8" + "|";
+
+sNUMACTION := IfKnownString(ExtractTag(sNUMACTION,sListNUM,"|"));*/
+sListNum := "";
+
+/*-------------------------------------------------------------------- Affichage des infos ANAPATH ------------------------------------------------------------------------------------ */
+IF LOOKUP("BB_ANAPATH_NUM-ACP",sListana,",") > 0  THEN
+
+sACP := IfKnownString(sO + " N° ACP: " + cOrd.Result("BB_ANAPATH_NUM-ACP", ?, ?).Attribute("Value") + ".") + sRC;
+ELSE
+sACP := sO + " N° ACP: ?" + sRC;
+ENDIF;
+
+IF LOOKUP("BB_ANAPATH_NUM-BLOC",sListana,",") > 0  THEN
+sBLOC := IfKnownString(sO + " N° BLOC: " + sRC + cOrd.Result("BB_ANAPATH_NUM-BLOC", ?, ?).Attribute("Value") + "." ) ;
+ELSE
+sBLOC := sO + " N° BLOC: ?" ;
+ENDIF;
+
+IF LOOKUP("BB_NDEFGEN_x",sListana,",") > 0  THEN
+sDEFGEN := IfKnownString(sO + " DEFGEN: " + cOrd.Result("BB_NDEFGEN_x", ?, ?).Attribute("Value")+ ".");
+sDEFGEN := Replace(Replace(sDEFGEN,"N°",""), "DEFGEN","N° DEFGEN");
+ELSE
+sDEFGEN := "";
+ENDIF;
+
+IF LOOKUP("BB_TRACABILITE-ONCO_x",sListana,",") > 0  THEN
+sTracaONCO := IfKnownString(sO + " Extrait le" + Substr(cOrd.Result("BB_TRACABILITE-ONCO_x", ?, ?).Attribute("Value"),20,30)+sRC);
+sTracaONCO := (Replace(Replace(Replace(Replace(Replace(Replace(sTracaONCO,";",""),"/","."),":",""),"par", sO + " Par: "),"le ","le"),"("," "));
+ELSE
+sTracaONCO := sO + "Extraction ?" + sRC;
+ENDIF;
+
+/*---------------------------------------------------------------- Affichage des données de stockage  -------------------------------------------------------------------------------------*/
+IF LOOKUP("BB_BIOTHEQUE_ADN_ONCO",sListana,",") > 0  THEN
+sBtkADN       := IfKnownString(sO + " " + cOrd.Result("BB_BIOTHEQUE_ADN_ONCO",?, ?).Attribute("Value"));
+sBtkADN 	:= Replace(Replace(Replace(sBtkADN,"-0","-"),"-00","-"),"ONCO-","");
+ELSE
+sBtkADN  := "";
+ENDIF;
+
+IF LOOKUP("BB_BIOTHEQUE_ARN_ONCO",sListana,",") > 0  THEN
+sBtkARN       := IfKnownString(sO + " "+ cOrd.Result("BB_BIOTHEQUE_ARN_ONCO",?, ?).Attribute("Value"))+ sRC;
+sBtkARN 	:= Replace(Replace(Replace(sBtkARN,"-0","-"),"-00","-"),"ONCO-","");
+ELSE
+sBtkARN := "";
+ENDIF;
+
+IF LOOKUP("BB_BIOTHEQUE_TNA", sListana, ",") > 0 THEN
+sBtkTNA      := IfKnownString(sO + " "+ cOrd.Result("BB_BIOTHEQUE_TNA", ?, ?).Attribute("Value"))+ sRC;
+sBtkTNA 	:= Replace(Replace(Replace(sBtkTNA,"-0","-"),"-00","-"),"ONCO-","");
+ELSE
+sBtkTNA := "";
+ENDIF;
+
+
+/*------------------------------------------------------------- Affichage des CQI et gestion des conditions de LDT --------------------------------------------------------------------------*/
+
+IF cOrd.Result("BB_CONC-ONCO_ADN",?, ?).Attribute("Value") <> ? THEN
+sConc := IfKnownString(sO + " [C]: " + cOrd.Result("BB_CONC-ONCO_ADN",?, ?).Attribute("Value") + "ng/µl.")+ sRC;
+
+ELSE
+
+
+sACP := "";
+sBLOC := "";
+sTracaONCO := "";
+sDDN	:= "";
+sNom := "";
+sEpouse := "";
+sDEFGEN := "";
+sConc := " INFO CQI " + sRC; 
+sConc := sConc + Fill("-",33) + sO +  " " + sQC;
+sDossier := "         N° Dossier du CQI  "+ Fill("-",43);
+sSex := "";
+
+sBtkARN := sBtkARN + "          Biothèque      " + Fill("-",33) + sO;
+
+ENDIF;
+
+IF .Procedure.Comment = "#SAIN" THEN
+
+sConc := IfKnownString(sO + " [C]: " + cOrd.Result("BB_CONC-ONCO-SAIN_ADN",?, ?).Attribute("Value") + "ng/µl.")+ sRC + "TISSU SAIN";
+sACP := IfKnownString(sO + " N° ACP: " + cOrd.Result("BB_ANAPATH-SAIN_NUM-ACP", ?, ?).Attribute("Value") + ".") + sRC;
+sBLOC := IfKnownString(sO + " N° BLOC: " +  sRC + cOrd.Result("BB_ANAPATH-SAIN_NUM-BLOC", ?, ?).Attribute("Value") + "." );
+sBtkADN       := IfKnownString(sO + " " + cOrd.Result("BB_BIOTHEQUE_ADN-SAIN",?, ?).Attribute("Value"));
+sBtkADN 	:= Replace(Replace(Replace(sBtkADN,"-0","-"),"-00","-"),"ONCO-","");
+ENDIF;
+/*--------------------------------------------------------------- Champs d' affichage à adapter en fonction des conditions et des LDT ------------------------------------------------------------------*/
+
+sCUSTOM7 :=  sBtkADN + sRC + sBtkARN + sBtkTNA + sRC;
+sCUSTOMN2 := sRC + sTracaONCO + sConc ;
+sCUSTOMN4 := sRC + sACP + sBLOC + sDEFGEN  ;
+sCUSTOMDOS2 := sDossier  + sRC + sNom + sEpouse  ;
+sCUSTOMDOS2 := sCUSTOMDOS2 + sSex + sDDN ;
+sCustomNATHAN := sRC ;
+sCustomNATHAN := sCustomNATHAN + sO ;
+
+/********************************************************************************************************* Ne pas TOUCHER, partie invariable *************************************************************/
+sCUST7      := "<CUSTOM7>" + sCUSTOM7 + "</CUSTOM7>";
+sCUSTN2     := "<CUSTOMN2>" + sCUSTOMN2 + "</CUSTOMN2>";
+sCUSTN4     := "<CUSTOMN4>" + sCUSTOMN4 + "</CUSTOMN4>";
+sCUSTDOS2   := "<CUSTOMDOS2>" + sCUSTOMDOS2 + "</CUSTOMDOS2>";
+sCustomNAT  := "<CustomNATHAN>" + sCustomNATHAN + "</CustomNATHAN>";
+
+sXML  :=  sCUST7 + sCUSTN2  + sCUSTN4  + sCUSTDOS2 + sCustomNAT;
+
+RETURN sXML;}
+
