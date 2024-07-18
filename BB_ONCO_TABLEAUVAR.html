@@ -1,0 +1,52 @@
+                                                                 /* CHU NIMES -- CQM -- 16/07/2024 -- Montage HTML tableau de variants CR oncosomatique TS et Oncohémato */
+STRING sTB, subHead, sVName,sPrtOne, sFormA, sFormB;
+INTEGER iHead, iBody;
+VARIANTRESULT cVarRes;
+
+iHead  := 1; iBody  := 1;
+sFormA := "<font style=""font-family: 'Arial';font-style: Normal;font-weight: normal;font-size: 11px;"">";
+sFormB := "</font>";
+
+sTB := sTB + "<HTML><head><meta http-equiv=""Content-Type"" content=""text/html; charset=iso-8859-1"" /></head><body>";
+/*sTB := sTB + "<center><b><p style=""background-color:#eeeeee; color-text:ffffff; border-style:Ridge; border-color:black; border-width:2px;" +""">" +"Variants identifiés "+ "</p></b></center>" ;*/
+sTB := sTB + "<table width=""50%"" border=""4"" style=""Ridge""><tr>";
+
+subHead := " Gène - Région - Nomenclature ADN  - Nomenclature protéine - Code une lettre - VAF (%)- Pathogénicité commentaire";
+cVarRes := .Object.GetVariantResult(?, ?, ?, ?, ?, iBody);
+
+WHILE NumEntries(subHead,"-") >= iHead DO 
+
+   sTB := sTB  + "<td><b><center>" + sFormA +  Entry(iHead,subHead,"-") + sFormB+ "</center></b></td>";
+   iHead := ihead + 1; DONE;	
+  
+WHILE cVarRes <> ? DO 
+
+	sVName  := cVarRes.Variant.locus.Name;
+	sPrtOne := Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(
+			   Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(IfKnownString(cVarRes.Variant.GetSequenceVariant().ProteinChange),
+			   "Ala","A"),"Arg","R"),"Asn","N"),"Asp","D"),"Cys","C"),"Gln","Q"),"Glu","E"),"Gly","G"),"His","H"),"Ile","I"),"Leu","L"),"Lys","K"),"Met","M"),"Phe","F"),
+			   "Pro","P"),"Ser","S"),"Thr","T"),"Trp","W"),"Tyr","Y"),"Val","V"),"p.(",""),")",""),"p.","");
+
+	sTB := sTB + "<tr><td><center>"   + sFormA + Replace(Replace(sVName,IfKnownString(Entry(2,sVName,":")),""),":","") + "  "              + sFormB + "</center></td>";      /* Isolation du nom de gène */ 
+	sTB := sTB + "<td><center>"       + sFormA + Replace(Replace(Replace(sVName,IfKnownString(Entry(1,sVName,":")),""),":",""),"on","on ") + sFormB +"</center></td></b>";  /* Isolation de la région de gène */
+	sTB := sTB + "<td><center>"       + sFormA + FitText(IfKnownString(cVarRes.Variant.GetSequenceVariant().CopyDNAChange),15,?,?,?)       + sFormB +"</center></td></b>";  /* Impact Génomique */
+	sTB := sTB + "<td><center>"       + sFormA + FitText(IfKnownString(cVarRes.Variant.GetSequenceVariant().ProteinChange ),15,?,?,?)      + sFormB +"</center></td></b>";  /* Impact Protéique */
+	sTB := sTB + "<td><center>"       + sFormA + IfKnownString(sPrtOne)                                                                    + sFormB +"</center></td></b>";  /* Code une lettre*/
+	sTB := sTB + "<td><center>"       + sFormA + IfKnownString(IntegerToSTring(cVarRes.AlleleFrequency,"%d")) + "    %"                    + sFormB +"</center></td></b>";  /* VAF */ 
+	sTB := sTB + "<td><center>"       + sFormA + IfKnownString(Entry(2,cVarRes.Variant.MolecularClassif.Name,"-"))                         + sFormB + "</center></td></b>";  /* Classification */
+	
+	   iBody := iBody + 1; cVarRes := .Object.GetVariantResult(?, ?, ?, ?, ?, iBody); DONE;
+
+sTB := sTB + "</table>" + "</body>"+ "</html>";
+
+
+SENDMail("Mickael.coquerelle@chu-nimes.fr", "Mickael.coquerelle@chu-nimes.fr" , ".", sTb, ?);
+
+RETURN sTB ;
+
+
+
+
+
+
+
