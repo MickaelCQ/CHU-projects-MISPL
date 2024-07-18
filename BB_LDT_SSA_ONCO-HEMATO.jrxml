@@ -1,0 +1,235 @@
+{: RETURN "<?xml version="+ chr(34) + "1.0" + chr(34) + " encoding=" + chr(34) + "utf-8"+ chr(34) + "?>";}
+
+{:STRING sXML, sCUSTN2,sCUSTN4, sCUSTDOS2, sCUST7, sCUST71;
+  STRING sDos, sMatID, sMatList,sPrefixeID, sID, sPref, sCDO,stype, sAna, sPatho;
+  STRING sRC, sRc2, sO, sN1, sQ, sDg, Sep, f33 , sf4, sf5, sf7, sf8, sf6, sf9, sf10, sf15, sp30;
+  STRING sDemo, sDemoB, sExt, sPur, sPat, sFLAG, sHch, sTable,sH1,sH2,sH3,sH4,sH5;
+  STRING sBTKl,sBTKAD,sBTKAR, sBTKARrec, sBTKADrec, sBTKADcol, sBTKADez2, sBiothq;  /* montage des biothèques */
+  STRING sVolDM, sVolRM;
+  STRING sHDil, CiARN,CiARNVT, sVolRT, sVolJK, sVolMP, Doi, sCdt;
+  STRING QBJAK, QBEZ2, QBMIPS,QBRMY, QBDMY, QBADN, QBARNM, QBADNM;                  /* Concentrations initiales et finales */
+  STRING sTcDMY,sTcRMY;                                                             /* Tracabilité des extractions */                                                                             
+  PERSON cPers;
+  PROCEDURE cProc;
+  MATERIAL cMat; 
+  INTEGER Ib,ibtk, iDO;
+  LOGICAL lCQ ;
+  ORDER cOrd;
+/*______________________________________________________________________________  TABLE ASCII __________________________________________________________________________________*/
+
+sRc := chr(13);  sRc2 := sRc + sRc; sQ  := chr(34); sO  := chr(149); sN1 := chr(216); sDg := chr(176); Sep := chr(166); f33 := Fill("-",33);
+sf4 := Fill(" ",4); sf5 := Fill(" ",5); sf6 := Fill(" ",6); sf7 := Fill(" ",7); sf8 := Fill(" ",8); sf9 := Fill(" ",9); sf10 := Fill(" ",10); sf15 := Fill(" ",15);
+sp30 := Fill(".",30); 
+
+/*__________________________________________________________ CQM -- CHU NIMES -- Le 19/03/2024 -- Initialisation des variables_________________________________________________ */
+
+cOrd  := .Order();
+cPers := .Object.Person();
+cProc := .Procedure;
+cMat  := cProc.Station.Material;
+sMatList := cOrd.Attribute("ExtendedMaterialList");
+sAna := cOrd.PropertyList(1, 5, ?,"CLASSIFICATION_GENERALE",?);
+sBTKAD := ""; sBTKAR := ""; sBTKARrec := ""; sBTKADrec := ""; sBTKADcol := ""; sBTKAdez2 := ""; sBiothq := "";
+sFLAG := IfKnownString(GetSiteAttribute("Procedure",.Procedure.Id,"Flag-ONCO"));
+sDemo := sO + " "+ IfKnownString(cPers.LastName + "-" + ToLower(cPers.FirstName) + sRC);
+sDemoB := cPad(ToUpper(cPers.LastName),30," ") + sRc + cPad(ToUpper(cPers.FirstName),30," ");
+sExt := "[C] :"+ Fill(" ",20)+ "ng/µL" ;
+sPatho:= sO + " Indication: " + IfKnownString(cOrd.Result("BB_ONCO_PATHOLOGIE",?,?).Attribute("Value"));
+
+sHDil := "." + sf5 + "H2O" + sf5 + Sep + sf5 + "ARN" + sf5 + f33 + sRC ;
+/*_____________________________________________________________________________BOUCLES :BIOTHEQUE - DO - [C] _________________________________________________________________ */
+
+   sBTKl:= "-ADN,-ARN-ZX,-ARN-GET-EXT,-ADN-GET-EXT,-ADN-COL,-ADN-EZ2,-ARN-TRI";
+   sCDO := "MAXWELL,PHENO,RECU";
+   ib := 0;
+   iDo:= 0;
+
+    WHILE NumEntries(sBTKl,",") >= ib DO 
+     
+      IF LOOKUP("BB_ONCO_BTK"+Entry(ib,sBTKl,","),sAna,",") > 0 THEN  
+         sbiothq := sBiothq + IfKnownString(cOrd.Result("BB_ONCO_BTK" +Entry(ib,sBTKl,","),?, ?).Attribute("Value")) + Replace(Substr(Entry(ib,sBTKl,","),6,-1),"","?");
+      ENDIF;
+
+      IF NumEntries(sBTKl,",") = ib THEN
+          sbiothq := Substr(Replace(Replace(Replace(sBiothq,"-0","-"),"-00","-"),"A",sRC + sO +"A"),2,-1);
+          sbiothq := Replace(Replace(Replace(Replace(Replace(sBiothq,"COL","(Colonne)"),"EZ2","(EZ2)"),"TRI","(TRIZOL)"),"GET-EXT","(RECU EXT)"),"ZX","(Maxwell)"); 
+      ENDIF;
+      ib := ib + 1;
+
+    DONE ;
+
+     IF INDEX(sAna,"BB_ONCO_C-ARN_PHENO") > 0 THEN
+         sBiothq := Replace(sBiothq,"(Maxwell)","(Phenol)");
+     ENDIF;
+
+   /* Extraction des [C] et des indices de pureté */ 
+   
+    WHILE Numentries(sCDO,",") >= iDo DO
+        IF LOOKUP("BB_ONCO_C-ARN_" + Entry(iDO,sCDO,","),sAna,",") > 0 THEN
+           CiARN := CiARN + sO + "[C]: " + IfKnownString(cOrd.Result("BB_ONCO_C-ARN_" + Entry(iDo,sCDO,","),?,?).Attribute("Value") + " ng/µl ")     + sRC;
+           CiARN := CiARN + sO + " DO: "  + IfKnownString(cOrd.Result("BB_ONCO_260-280_" + Entry(iDo,sCDO,","),?,?).Attribute("Value")+ " (260/280)" + sRC + f33);
+
+           CiARNVT := CiARNVT + IfKnownString(sO +" Extrait le : " + ToString(cOrd.Result("BB_ONCO_C-ARN_" + Entry(iDo,sCDO,","),?,?).ValidationTime,"%d/%m/%Y")) + sRC +
+                          IfKnownString(sO +" Par : "+ cOrd.Result("BB_ONCO_C-ARN_" + Entry(iDo,sCDO,","),?,?).ValidationUser.FirstName);
+        ENDIF;
+
+           iDo := iDo + 1;
+    DONE;
+
+    sVolRT := sHDil +
+            Replace(IfKnownString(".    "  + Entry(2,cOrd.Result("BB_ONCO_VOL-H2O-DIL-RT","initial","Validated").Attribute("Value"),":") + sf8  + Sep +
+                                  sf5 + Entry(2,cOrd.Result("BB_ONCO_VOL-ARN-DIL-RT","initial","Validated").Attribute("Value"),":")),sN1,"  " + sN1);
+
+    sVolJK := sRc + Replace(sHDIL,"R","D") +
+                    Replace(Replace(IfKnownString("."  + sf4 +  Entry(2,cOrd.Result("BB_ONCO_VOL-H2O-JAK2","initial","Validated").Attribute("Value"),":") + sf5 + Sep +
+                                                       + sf5 + Entry(2,cOrd.Result("BB_ONCO_VOL-ADN-JAK2","initial","Validated").Attribute("Value"),":")),sN1,"  " + sN1),"µl","");
+
+    sVolMP := sRc + Replace(sHDIL,"R","D") +
+                    Replace(Replace(IfKnownString("."  + sf4 +  Entry(2,cOrd.Result("BB_ONCO_VOL-H2O-MIPS","initial","Validated").Attribute("Value"),":") + sf5 + Sep +
+                                                       + sf5 + Entry(2,cOrd.Result("BB_ONCO_VOL-ADN-MIPS","initial","Validated").Attribute("Value"),":")),sN1,"  " + sN1),"µl","");
+
+
+    sVolDM := sRc + Replace(sHDIL,"R","D") +
+                    Replace(Replace(IfKnownString("."  + sf4 +  Entry(2,cOrd.Result("BB_ONCO_VOL-H2O-ADN-MYELO","initial","Validated").Attribute("Value"),":") + sf5 + Sep +
+                                                       + sf5 + Entry(2,cOrd.Result("BB_ONCO_VOL-ADN-MYELO","initial","Validated").Attribute("Value"),":")),sN1,"  " + sN1),"µl","");
+    sVolRM := sRc + Replace(sHDIL,"R","D") +
+                    Replace(Replace(IfKnownString("."  + sf4 +  Entry(2,cOrd.Result("BB_ONCO_VOL-H2O-ARN-MYELO","initial","Validated").Attribute("Value"),":") + sf5 + Sep +
+                                                       + sf5 + Entry(2,cOrd.Result("BB_ONCO_VOL-ARN-MYELO","initial","Validated").Attribute("Value"),":")),sN1,"  " + sN1),"µl","");;
+
+/**** Définition de la Ci pour les FT Myeloide ****/
+
+    sTcDMY := IfKnownString(cOrd.Result("BB_ONCO_TRACA-EXT-1",?,?).Attribute("Value")) ;
+    sTcRMY := IfKnownString(cOrd.Result("BB_ONCO_TRACA-EXT-2",?,?).Attribute("Value")) ;
+
+    IF INDEX(sAna,"BB_ONCO_C-ARN_MAXWELL") > 0 THEN 
+       QBRMY := sRC + sf7 + IfKnownString("[C]: " + cOrd.Result("BB_ONCO_C-ARN_MAXWELL",?,?).Attribute("Value") + " ng/µL") + sRC + sTcRMY;
+
+      ELSE IF INDEX(sAna,"BB_ONCO_C-ARN_PHENO") > 0 THEN 
+         QBRMY := sRC + sf7 + IfKnownString("[C]: " + cOrd.Result("BB_ONCO_C-ARN_PHENO",?,?).Attribute("Value") + " ng/µL") + sRC + sTcRMY;
+
+         ELSE IF INDEX(sAna,"BB_ONCO_C-ARN_RECU") > 0 THEN 
+           QBRMY := sRC + sf7 + IfKnownString("[C]: " + cOrd.Result("BB_ONCO_C-ARN_RECU",?,?).Attribute("Value") + " ng/µL") + sRC + sTcRMY;
+
+         ENDIF;
+      ENDIF;
+    ENDIF;
+
+    IF INDEX(sAna,"BB_ONCO_C-ADN_RECU") > 0 THEN 
+         QBDMY := sRc + sf7 + IfKnownString("[C]: " + cOrd.Result("BB_ONCO_C-ADN_RECU",?,?).Attribute("Value") + " ng/µL" ) + sRC + sTcDMY;
+
+         ELSE IF INDEX(sAna,"BB_ONCO_C-ADN_COL") > 0 THEN 
+            QBDMY := sRc + sf7 + IfKnownString("[C]: " + cOrd.Result("BB_ONCO_C-ADN_COL",?,?).Attribute("Value") + " ng/µL" )+ sRC + sTcDMY;
+
+         ENDIF;
+    ENDIF;
+
+    QBEZ2 := sRC + sf7 + IfKnownString("[C]: " + cOrd.Result("BB_ONCO_C-ADN_EZ2",?,?).Attribute("Value") + "ng/µL");
+    QBJAK := sRC + sf7 + IfKnownString(cOrd.Result("BB_ONCO_CF-ADN-JAK2",?,?).Attribute("Value"));
+    QBMIPS:= sRC + sf7 + IfKnownString(cOrd.Result("BB_ONCO_CF-ADN-MIPS",?,?).Attribute("Value"));
+    QBADNM:= sRC + sf7 + IfKnownString(cOrd.Result("BB_ONCO_CF-ADN-MYELO",?,?).Attribute("Value") + "ng/µL");
+    QBARNM:= sRC + sf7 + IfKnownString(cOrd.Result("BB_ONCO_CF-ARN-MYELO",?,?).Attribute("Value") + "ng/µL");
+
+    
+
+    sPur := sO + " Pureté (260/280) :" + sRc + Fill(".",30) + sRC + sRc + + sO + " Solvants (260/230):" + sRc + Fill(".",30);
+
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                                                      MONTAGE DE LA CONDITION (OM - OS - ADN - ARN) ET DU PREFIXE ID                                                                            */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+   sID := "[?]" + cOrd.InternalID + sRC;
+   sPrefixeID := Replace(Replace(Substr(Entry(3,Entry(1,cOrd.Attribute("ExtendedMaterialList"),","),"_"),1,3),"SAN"," OS"),"MOE"," OM") + cOrd.InternalID;
+  
+  IF Matches(sPrefixeID, "..."+ Fill("[0-9]",10), NO) = TRUE THEN 
+     sID := sO + " N" + sDg + sPrefixeID + sRC ;
+  ENDIF;
+
+  IF INDEX(sMatList,"BB_ONCO-HEMATO_BUFFYCOAT") > 0 THEN 
+     sCdt:= sO + "Leucocytes totaux" + sRC + "(Buffy Coat)" + sRC;
+
+      ELSE IF INDEX(sMatList,"BB_ONCO-HEMATO_FICOLL") > 0 THEN 
+         sCdt:= sO +  "Cellules mononuclées" + sRC;
+
+      ENDIF;
+  ENDIF; 
+     sPat   := sRC + sID + sDemo;
+
+/*                                                                             TABLE DE CORRESPONDANCE LISTE - > OBJETS                                                                                           */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                FLAG LISTE         |           COLONNE 1          |      COLONNE 2       |       COLONNE 3      |    COLONNE 4       |    COLONNE 5        |                                                          */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+sHch := "";
+sHch := sHch + "#DIL-RT-BCRABL= "+ CiARN + CiARNVT                + "#" + sRC + sCdt   + "#" + sRC + sbiothq  + "#" + sPat         + "#" + sRc + sVolRT  + "#" + "|";
+sHch := sHch + "#EXTPROMEGA= "   + sRc   + CiARN + sPatho         + "#" + sRC + sCdt   + "#" + sRC + sbiothq  + "#" + sPat         + "#" + sRc + sVolRT  + "#" + "|";
+sHch := sHch + "#RT-PCR= "       + CiARN + CiARNVT                + "#" + sRC + sCdt   + "#" + sRC + sbiothq  + "#" + sPat         + "#" + sRc + sVolRT  + "#" + "|";
+sHch := sHch + "#EXT-EZ2= "      + sRC + sID + sPatho             + "#" + sRC + sCdt   + "#" + sRC + sbiothq  + "#" + sRC + sDemoB + "#" + sRc + sExt    + "#" + "|";
+sHch := sHch + "#PANEL-SMP= "    + sPat                           + "#" +    QBEZ2     + "#" + sRC + sbiothq  + "#" +  sVolJK      + "#" + QBJAK         + "#" + "|";
+sHch := sHch + "#PANEL-MIPS= "   + sPat                           + "#" +    QBEZ2     + "#" + sRC + sbiothq  + "#" +  sVolMP      + "#" + QBMIPS        + "#" + "|";
+sHch := sHch + "#EXTCOLONNE= "   + sRC + sID + sPatho             + "#" + sRC + sDemoB + "#" + sRC + sbiothq  + "#" +  sPur        + "#" + sRc + sExt    + "#" + "|";
+sHch := sHch + "#EXTMANU= "      + sRC + sID + sRC + sCdt +sPatho + "#" +     sPat     + "#" + sRC + sbiothq  + "#" +  sPur        + "#" + sRc + sExt    + "#" + "|";
+sHch := sHch + "#DILADNMYELO= "  + sPat                           + "#" +    QBDMY     + "#" + sRC + sbiothq  + "#" +  sVolDM      + "#" + QBADNM        + "#" + "|";
+sHch := sHch + "#DILARNMYELO= "  + sPat                           + "#" +    QBRMY     + "#" + sRC + sbiothq  + "#" +  sVolRM      + "#" + QBARNM        + "#" + "|";
+  
+
+sTable := ExtractTag(sFLAG,sHch,"|");
+
+sH1:= Entry(1,sTable,"#"); sH2:= Entry(2,sTable,"#"); sH3:= Entry(3,sTable,"#"); sH4:= Entry(4,sTable,"#"); sH5:= Entry(5,sTable,"#");
+
+/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                                                             GESTION DES CONTROLES QUALITES (OBJECT.TYPE = 5)                                                                                     */
+/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+lCQ := .Object.Type = 5;
+
+IF lCQ = YES AND sFLAG = "#PANEL-SMP" THEN 
+
+  sH1 := sRc2 + sf5 + "CQI systématique " ;
+  sH2 := sRc2 + sf7 + "Panel SMP QO " ;
+  sH3 := sRC + sf10+ sf5 + "Stockage P618" + sRc2 + sf10  + sf5 + "LAB-BM-R13";
+  sH4 := sRc + Replace(sHDIL,"R","D") + "." + sf4 + "9 µl" + sf8 + Sep + sf5 + "1 µl" ;
+  sH5 := sRc + sO + " Numéro de lot :" + sRc2 + sp30 ;
+ENDIF;
+
+IF lCQ = YES AND sFLAG = "#RT-PCR" THEN 
+
+  sH1 := sRc2 + sf5 + "CQI à la demande " ;
+  sH2 := sRC + sf7 + "Contrôle RT-PCR " + sRC + Fill("-",33) + sO + " " + IfKnownString(.Object.QCLot().LotNumber);
+  sH3 := sRC + sf10+ sf5 + "Stockage P813" + sRc2 + sf10  + sf5 + "LAB-BM-C4";
+  sH4 := sRc + sO + " Réaliser la pré-RT  avec 10 µL de solution  commerciale pure.";
+  sH5 := sRc + sO + " Numéro de lot :" + sRc2 + Fill(".",30);
+ENDIF; 
+
+IF lCQ = YES AND sFLAG = "#DILADNMYELO" THEN
+              
+  sH1 := sRc2 + sf5 + "CQI à la demande " ;
+  sH2 := sRC + sf5 + "CQ MYELOIDE ADN " + sRC + Fill("-",33) + sO + " " + IfKnownString(.Object.QCLot().LotNumber);
+  sH3 := sRC + sf10 + sf5 + "Stockage P618" + sRc2 + sf10  + sf5 + "LAB-BM-R13";
+  sH4 := sRc + sO + " H20 : " + Fill(".",25) + sRc2 + sO +  " ADN : " + Fill(".",25);
+  sH5 := sRc + sf6 + "[Cf] : 1.2ng/µL";
+ENDIF;
+
+IF lCQ = YES AND sFLAG = "#DILARNMYELO" THEN
+              
+  sH1 := sRc2 + sf5 + "CQI à la demande " ;
+  sH2 := sRC + sf5 + "CQ MYELOIDE ARN " + sRC + Fill("-",33) + sO + " " + IfKnownString(.Object.QCLot().LotNumber);
+  sH3 := sRC + sf10 + sf5 + "Stockage P505" + sRc2 + sf10  + sf5 + "CYT-C15 -80°C";
+  sH4 := sRc + sO + " H20 : " + Fill(".",25) + sRc2 + sO +  " ARN : " + Fill(".",25);
+  sH5 := sRc + sf6 + "[Cf] : 2.5 ng/µL";
+ENDIF;
+   
+/*___________________________________________________________________________________________________ ASSEMBLAGE ___________________________________________________________________________________________________*/
+
+
+sCUSTN2  := "<CUSTOMN2>"   + IfKnownString(sH1) + "</CUSTOMN2>";
+sCUSTN4  := "<CUSTOMN4>"   + IfKnownString(sH2) + "</CUSTOMN4>";
+sCUSTDOS2:= "<CUSTOMDOS2>" + IfKnownString(sH3) + "</CUSTOMDOS2>";
+sCUST7   := "<CUSTOM7>"    + IfKnownString(sH4) + "</CUSTOM7>";
+sCUST71  := "<CUSTOM71>"   + IfKnownString(sH5) + "</CUSTOM71>";
+
+sXML  := sCUSTN2 + sCUSTN4 + sCUSTDOS2 + sCUST7 + sCUST71 ;
+
+RETURN sXML;
+}
+
+
