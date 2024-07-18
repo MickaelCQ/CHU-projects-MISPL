@@ -1,0 +1,337 @@
+{: RETURN "<?xml version="+ chr(34) + "1.0" + chr(34) + " encoding=" + chr(34) + "utf-8"+ chr(34) + "?>";}
+{: STRING sXML, sCUSTH1,sH1, sCUSTH2,sH2, sCUSTH3,sH3, sCUSTH4,sH4, sCUSTH5,sH5, sCUSTH6,sH6, sCUSTH7,sH7, sCUSTH8,sH8, sCUSTH9,sH9, sCUSTH10,sH10, sCUSTMIX2, sCUSTCB;
+
+   STRING sMixGlobal;
+   STRING sRcRT,sVolUniRT, sTotRT, sVolMIXRT, sReacRT, Head1RT, sProgRT1, sProgRT2, sProgSMP;
+   STRING sRcJK,sVolUniJK, sTotJK, sVolMIXJK, sReacJK ;  
+   STRING sf1, sf2, sf3, sf4, sf5, sf6, sf7, sf8, sf9, sf10, sf20, sf30, sf40, sf50, sf60, sf70, sf80, sf90, sf100;
+   STRING sp10, sp40, sRc, sRc2, sQ, sO, sNl, sDg, sI, sI2, sepRT, sepJK, sCAD; 
+   STRING sWlt, sTr, sUser, sTable;
+   STRING sFT, sIC, sVT, sTabV;
+   STRING Te, sRQB, sTRQB, sR1Q, sR2Q, sR3Q, sR4Q;
+   STRING H2RT, H3RT, H4RT, H5RT; 
+   STRING H2EZ2, H3EZ2, H4EZ2, H5EZ2, EZ1, EZ2;
+   STRING H1JK, H2SMP, H3SMP, H4SMP, H4SMPa, H4SMPb, H4SMPc, H5SMP, H5SMPB, H1MIPS, H4MIPS, H4MIPSb;
+   STRING H2CO,H3CO,H5CO,H1MD, H2MD, H3MD, H4MD, H5MD, H1MR, H2MR, H4MR, H5MR;
+
+   FRACTIONAL fMixGlobal;
+   INTEGER iC, iB, iR, iJK, iSMP;
+   STRING sVT1, sVT2, sVT3, sVT4;
+   
+   SC_USER cSC;
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                                                    CQM -- 15/03/2024 --  MISPL EN-TETE DES LISTES DE TRAVAIL ONCOHEMATOLOGIE                                                                   */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+cSC := .CreationUser;
+sWlt := Substr(.Name,9,20);
+sUser := "Tech : " + ToUpper(Substr(cSC.FirstName,1,1)) + "." + ToUpper(Substr(cSC.LastName,1,1)) + ToLower(Substr(cSC.LastName,2,15));
+sTr := sUser + DateTimeToString(.CreationTime," - S%U - %d/%m/%Y ");
+iC := .EntryCount;
+siC:= "("+ToString(iC,"%d")+ " patients" + ")";
+
+Message(sWlt);
+IF iC = 1  THEN sIc := Replace(siC,"s","");  ENDIF;
+
+sH1:= "H1"; sH2:= "H2"; sH3:= "H3"; sH4:= "H4"; sH5:= "H5"; sH6:= "H6"; sH7:="H7"; sH8:= "H8"; sH9:= "H9"; sH10:= "H10";
+
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                                                                     TABLE DE VERITE CONDITIONS DE DECLENCHEMENT DES BOUCLES                                                                    */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+sVT := sVT + "EXT-MAXWELL="+ "1" +"#"+ "0" + "#"+ "0" +"#"+ "\";
+sVT := sVT + "DIL-bcr-abl="+ "1" +"#"+ "0" + "#"+ "0" +"#"+ "\";
+sVT := sVT + "RT-PCR-BCR= "+ "1" +"#"+ "0" + "#"+ "0" +"#"+ "\";
+sVT := sVT + "EXT-EZ2=    "+ "0" +"#"+ "1" + "#"+ "0" +"#"+ "\";
+sVT := sVT + "DIL-JAK2=   "+ "0" +"#"+ "0" + "#"+ "0" +"#"+ "\";
+
+sTabV := ExtractTag(sWlt,sVT,"\");
+sVT1 := Entry(1,sVT,"#"); sVT2 := Entry(2,sVT,"#"); sVT3 := Entry(3,sVT,"#"); sVT4 := Entry(4,sVT,"#");
+
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                                                                                    TABLE ASCII ET MOTIFS REPETES                                                                               */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+sRc := chr(13);       /**/   sRc2 := sRc + sRC;   /**/   sO  := chr(149);    /**/ sepRT := Fill("_",34); /**/ sepJK := Fill("_",26);  
+sI:= " " + chr(166);  /**/   sNl := chr(216);     /**/   sDg := chr(176);    /**/ sCAD := chr(150);      /**/ sQ  := chr(34);
+
+sf1  := Fill(" ",1);  /**/  sf2  := Fill(" ",2);  /**/  sf3 := Fill(" ",3);  /**/ sf4 := Fill(" ",4);    /**/ sf5  := Fill(" ",5); 
+sf6  := Fill(" ",6);  /**/  sf7  := Fill(" ",7);  /**/  sf7 := Fill(" ",7);  /**/ sf8 := Fill(" ",8);    /**/ sf9  := Fill(" ",9);
+sf10 := Fill(" ",10); /**/  sf20 := Fill(sf10,2); /**/ sf30 := Fill(sf10,3); /**/ sf40:= Fill(sf10,4);   /**/ sf50 := Fill(sf10,5);
+sf60 := Fill(sf10,60);/**/  sf70 := Fill(sf10,7); /**/ sf80 := Fill(sf10,8); /**/ sf90:= Fill(sf10,9);   /**/ sf100:= Fill(sf10,10);
+
+sP10 := Fill(".",10); /**/ sP40 := Fill(sP10,4); 
+
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                                                                    ASSIGNATIONS DES VARIABLES SPECIFIQUES A CHAQUE LDT                                                                         */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+  
+H2RT := cPad("DILUTIONS  - CONTROLE - INCUBATION PRE-RT ",100," ");
+H3RT := "   REACTION DE RT-PCR"+ sf50 + sf5 +"|   Réactifs   |  /puits |  Total  |" ;
+H4RT := Replace(lPad(sO+ "DILUTIONS : ",133," ") + "#" + sRC + 
+        " Volume 10 µL. Si la [C] est inférieure à 100 ng/µL, suivre le volume d'ARN  indiqué entre  # 10 et 15 µL, sans ajouter d'H20. Au-delà de 15µL, mettre 15µL d'ARN max."+ sf20 + sf3 + "#"  + sRC,"#",".")+
+        Fill("-",120);
+H4RT := H4RT + Replace(lPad(sO+ "CONTROLES : ",130," ") + "#" + sRC +
+        " Pour chaque contrôle C+ IS-MMR et C+ Haut, réaliser la pré-RT avec 10 µL de solution   #  commerciale pure. Identifier le tube avec la date de RT sur la tranche. "+ sf30 + "#" ,"#",".")+ 
+        Fill("-",120);
+H4RT := H4RT + Replace(lPad(sO+ "INCUBATION : 10min à 70" + sDg + "C -- Prog : PRE-RT" ,110 ," ") + "#" ,"#",".");
+
+H5RT := "Programme réaction de RT-PCR                 "+  sf20 + "$1" + sf50 + sf7 + Fill("_",34) + sf20 + sf7 + "$2" + sRC;
+
+sRcRT  :=    "H2O-Tp-RP- DNTP-DTT-MgCL2-RNASin-RTase-TOTAL ";
+sVolMixRT := "1.10-4.00-0.40-4.50-2.50-1.50-0.50-0.50-15.0";
+sProgRT1 :=Replace( "Thermocycleur | LAB_TC10 DIONYSOS" + 
+                    " -  Programme      |" + sf10 + sf7 + "RT"               + sf10 + sf6 + "|" + sf2 +
+                    " - Température(#C) |" + sf7        + "Temps (minutes)"  + sf4        + "|" + sf1 +
+                    " -23#C     |"         + sf10 + sf6 + "10 min"           + sf10 + sf1 + "|*"+ 
+                    " -42#C     |"         + sf10 + sf6 + "45 min"           + sf10 + sf1 + "|" + 
+                    " -99#C     |"         + sf10 + sf7 + "03 min"           + sf9        + "|>" + 
+                    "    --- ","#",sDg);
+iR := 1; iB := 1;
+   
+   WHILE NumEntries(sRcRT,"-") > iR DO           /***** Dimensionnement tableaux réactifs et du Programme thermocycleur + tracabilité réactif *****/                                
+
+        /**** Extraction des lignes ****/
+        sVolUniRT    := Entry(iR,sVolMixRT,"-");
+        sReacRT      := cPad(Entry(iR,sRcRT,"-"),12," ");
+ 
+        /***** Calcul du volume réactionnel d'indice iR ******/
+        sTotRT := ToString((iC + 4) * StringToFractional(Entry(iR,sVolMixRT,"-")),"%2.2f");
+
+        /**** Correction nb significatifs pour l'alignement ****/
+        IF ToString(len(sTotRT),"%d") = "4" THEN 
+            sTotRT := Replace(sTotRT,sTotRT,"0"+ sTotRT);
+        ENDIF;
+      
+        /**** Montage tableau réactif ****/
+        H5RT := H5RT + Entry(iR,sProgRT1,"-") + sf30 + lpad(sReacRT + lPad(sI +"  "+ sVolUniRT + "  ",10," ") + lPad(sI +"  " +sTotRT +"  "+ sI,10," ") + sI  ,35," ") + " " + sRC;
+        H5RT := H5RT + sepRT + ToString(IR,"%d") + sf20 + sf6 + sI +Fill("-",40)+ sRC ;
+
+        /**** Vérification des calculs ****/ 
+        fMixGlobal := fMixGlobal + (iC + 4) * StringToFractional(Entry(iR,sVolMixRT,"-"));
+        
+   iR := iR + 1;
+
+             /*** Tableau Thermoycleur ***/                
+             WHILE iR > iB DO
+
+                IF LOOKUP(ToString(iB,"%d"),"7,8,9",",")>0 THEN
+                   H5RT := Replace(H5RT,sepRT + ToString(iB,"%d"), "");
+                ENDIF;
+
+                H5RT := Replace(H5RT,sepRT + ToString(iB,"%d"), sepRT + "|");
+                iB := iB + 1;
+            DONE;
+   DONE;
+
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                                                                                        DEFINITION DES MIX QUBIT                                                                                */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+Te := "A";
+
+       IF iC >= 8  THEN Te:= "B";
+  ELSE IF iC >= 12 THEN Te := "C";
+  ElSE IF iC >= 16 THEN Te := "D";
+  ELSE IF iC >= 24 THEN Te := "E";
+  ENDIF; ENDIF; ENDIF; ENDIF;
+
+sRQB := sRQB + "A=" + "2280" +"#"+ "120"  +"#"+ "1140"  +"#"+ "2.9" +"#"+"\";
+sRQB := sRQB + "B=" + "2280" +"#"+ "120"  +"#"+ "1140"  +"#"+ "2.9" +"#"+"\";
+sRQB := sRQB + "C=" + "3040" +"#"+ "160"  +"#"+ "1520"  +"#"+ "3.8" +"#"+"\";
+sRQB := sRQB + "D=" + "3800" +"#"+ "200"  +"#"+ "1900"  +"#"+ "4.8" +"#"+"\";
+sRQB := sRQB + "E=" + "5320" +"#"+ "280"  +"#"+ "2660"  +"#"+ "6.7" +"#"+"\";
+
+sTRQB := ExtractTag(Te,sRQB,"\");
+
+sR1Q:= Entry(1,sTRQB,"#"); sR2Q:= Entry(2,sTRQB,"#"); sR3Q:= Entry(3,sTRQB,"#"); sR4Q:= Entry(4,sTRQB,"#");
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+H5RT := Replace(Replace(H5RT,"$1","   TOTAUX  " + sI + "  15.0  " + sI + "  " + ToString(fMixGlobal,"%2.2f") + " " + sI),"$2",sI + Fill("-",40));
+H5RT := Replace(Replace(H5RT,"*  ",""),">     ","");
+
+H2EZ2 := cPad("KIT : EZ1 et EZ2" +chr(153)+ "DNA BLOOD 350µL KIT (48)",120," ") ;
+H3EZ2 := cPad("BARETTE ECHANTILLON " + sIC,120," ");
+
+H4EZ2 := Replace(lPad(sRC + sO + " PREPARATION DES ECHANTILLONS  ",110," ") + "#" + Fill("_",73) +
+               + sO  + " Étiqueter les tubes de 2mL jupés  fournis dans le kit  avec les étiquettes patients."         + sf10 + sf3 + "#" + sRc2+
+               + sO  + " Aliquoter 350 µL de sang ou de moelle, par patient."                                          + sf50 + sf9 + "#" + sRc2+
+               + sO  + " Au lancement du run sur la machine, choisir 'DNA BLOOD'. "                                    + sf40 + sf6 + "#" + sRc2+ 
+               + sO  + " Avant de charger les barettes, mettre les billes en suspension en agitant par rotation."      + sf6        + "#" + sRc +
+                       " Suivre les instructions de la machine."                                                       + sf80 + sf4 + "#" + sRc2+
+               + sO  + " Scanner les Codes-barres de la FT avec les positions correspondantes sur l'appareil."         + sf6        + "#" + sRc2+
+               + sO  + " Positionner une barette par échantillon, selon les positions choisies sur la machine."        + sf9        + "#"                                          
+         ,"#",".");
+
+/* Schéma de la barette d'extraction. */
+Ez1 :=      Fill(sCAD,5)       + Fill(" ",130) + "." + sRc ;
+Ez2 := "|"+ Fill(" ",10) + "|" + Fill(" ",129) + "." + sRc ;
+
+H5EZ2 := Ez1 + Ez2       +  "|    4    |  A" + sf10 + sf6 + " Position A : Placer le tube 2ml contenant 350 µL de sang ou moelle."     + sRc +
+         Ez2 + Ez1 + Ez2 +  "|    3    |  B" + sf10 + sf6 + " Position B : Vide." + Fill(" ",80) + "."                                 + sRc +
+         Ez2 + Ez1 + Ez2 +  "|    2    |  C" + sf10 + sf6 + " Position C: Placer un Tip holder: portoir et tips." + Fill(" ",33) + "." + sRc +
+         Ez2 + Ez1 + Ez2 +  "|    1    |  D" + sf10 + sf6 + " Position D: Tube d'élution 1.5 mL étiqueté, vide"   + Fill(" ",32) + "." + sRc + 
+         Ez2 + Ez1;
+
+/* Recette Panel SMP */
+H1JK := "Panel SMP Préparation des librairies automatisées" + sRC + sTr ;
+H2SMP := cPad("DILUTIONS : pièce 618 et MIX PCR : pièce 616 " + sIC,120," "); 
+H3SMP := cPad("PCR AMPLIFICATION : pièce 618",120," "); 
+
+sRcJK     := sO + " Lot HiFi MIX :" + sf40 + "5X Ion ampliseq HIFI MIX" + "-" + sP40 + sf30 + "Eau Nuclease Free   - TOTAL      ";
+sVolMixJK :=    "5.00-2.50-7.50";
+
+   iJK := 1;
+
+H4SMPc :=  sO + " Préparer le mix suivant :"+ sf20 + sf9 + cPad("REACTIFS",25," ") + "|" + sf5 + " /Puits" + sf10 + "Totaux" + sf3 + "|" ;
+
+    WHILE NumEntries(sRcJK,"-") >= iJK DO
+        
+        H4SMPc := H4SMPc + sRc + Fill("-",68) + sRC;
+
+        /***** Tableau PCR SMP *****/ 
+         sReacJK      := Entry(iJK,sRcJK,"-");
+         sVolUniJK    := Entry(iJK,sVolMixJK,"-");
+         sTotJK       := ToString((iC + 1) * StringToFractional(sVolUniJK),"%3.1f");
+
+           /***** Correction des chiffres significatifs pour l'alignement ****/
+           IF 1 >= Len(Entry(1,sToTJK,".")) THEN 
+              sTotJK := Replace(sTotJK,sToTJK,"0"+ sTotJK); 
+           ENDIF;
+
+        /**** Montage tableau réactif  ****/
+         H4SMPc := H4SMPc + sReacJK + "|" + sf8 + sVolUniJK + sf5 + "|" + sf5  + sTotJK + sf5 + "|" + sf5 ;
+
+        iJK := iJK + 1;
+
+    DONE;
+
+H4SMPa := Replace(lPad(sO + " PREPARATION DES DILUTIONS :  pièce 618 ",108," ") + "#" + sRc +
+               + sO  + " Préparer pour chaque patient, une dilution SF : 27 µL d'H2O + 3 µL d'ADN."   + Fill(" ",17) + "#" + sRc 
+               + sO  + " Doser au Qubit chaque dilution selon le MOLAB091 : Utilisation du Qubit. "   + Fill(" ",19) + "#" + sRc 
+               + sO  + " Préparer les dilutions des ADN selon le tableau."                            + Fill(" ",60) + "#" + sRc
+          ,"#",".");
+ 
+IF INDEX(sWlt,"JAK2") > 0 THEN
+H4SMPa := Replace(H4SMPa  + sO  + " Diluer le QO 1.0 µL QO et 9.0 µL H20. "  + Fill(" ",74) + "#" + sRc,"#","."); ENDIF;
+                         
+H4SMPb := Replace(H4SMPb+ Fill("_",73)  + lPad(sO + " PREPARATION MIX PCR : pièce 616 ",115," ") + "#" + sRc +
+                        + sO  + " Répartir 5 µl des '2X Primers pool OnDemand' IAD23165 dans la plaque :"      + Fill(" ",19) + "#" + sRc +
+                        + sO  + " 2X Primer Pool 1 en colonne rouge."                                          + Fill(" ",73) + "#" + sRc +
+                        + sO  + " 2X Primer Pool 2 en colonne bleue."                                          + Fill(" ",73) + "#" + sRc +
+                        + Fill("_",73)
+                       ,"#",".");
+
+H4MIPSb :=Replace(Fill("_",73)  + lPad(sO + " PREPARATION DES MIX DE PRIMERS : pièce 616 ",103," ")                      + "#" + sRc +
+                        + sO  + " Mix Primer 1 : 6.4 µL de 'spike in pooL1' + 160 µL d'IAD221323 pool1'"    + sf20 + sf5 + "#" + sRc +
+                        + sO  + " Mix Primer 2 : 6.4 µL de 'spike in pooL2' + 160 µL d'IAD221324 pool2'"    + sf20 + sf5 + "#" + sRc2+
+                        + sO  + " Répartir 5 µl des mix 'IAD221323-IAD221324' dans la plaque. "             + sf30 + sf8 + "#" + sRc +
+                        + sO  + " 2X Primer Pool 1 en colonne rouge et Pool 2 en colonne bleue."            + sf30 + sf6 + "#" + sRc +
+                        + Fill("_",73)
+                       ,"#",".");
+
+
+H4SMP  := Replace(H4SMPa +  H4SMPb  + H4SMPc,"TOTAL",sO + " Dépot 7,5µl/puits de la colonne jaune." + sf20 + sf5 + "TOTAL") ;
+
+
+H5SMP := Replace(lPad(sO +" Ajouter 5 µL des dilutions ADN dans les puits de la colonne jaune.",105," ")             + "#" + sRC +
+                 lPad(sO +" Mélanger 5 fois pas aspiration refoulement à l'aide de la pipette multicanaux.",100, " ")+ "#" + sRC +
+                 lPad(sO +" Transférer 5µL dans chaque colonne de la plaque (rouge et bleue).",102," ")              + "#" + sRC + 
+                         + sepJK + sRC                                                                               + ">" + sRC +
+                 lPad(sO + " Centrifuger brièvement la plaque",124," ")                                              + "#" + sRC +
+                 lPad(sO + " Transférer le MIX 2 (bleue) dans le MIX 1 (rouge) pour chaque puits",103," ")           + "#"   
+                 ,"#",".");
+
+sProgSMP := Replace(       sO + " lancer la PCR selon le programme ci" + sCAD +"contre :" + sf10 + sf7 + "Programme   SMP" + sCAD + "Amplification" + "|" +
+                     "-"      + " Thermocycleur :"                                        + sf50 + sf9 + "Temp(#C)" + sf5 + "|"  + sf8 + " Durée "  + sf6 + "|" + 
+                     "-"      + " [  ] PLUTON "                                           + sf50       + "99#C"     + sf9 + "|"  + sf8 + "02 min"   + sf7 + "|" + 
+                     "-"      + " [  ] ATHENA "                                           + sf50       + "99#C"     + sf9 + "|"  + sf8 + "15 sec"   + sf7 + "|" + 
+                     "-"      + " [  ] PEGASE "                                           + sf50       + "60#C"     + sf9 + "|"  + sf8 + "04 min"   + sf7 + "|" + 
+                     "-"      + " [  ] AUTRE  :"                                          + sf50       + "10#C"     + sf9 + "|"  + sf10+ "  oo   "  + sf7 + "|","#",sDg);
+iSMP := 1;
+
+   WHILE NumEntries(sProgSMP,"-") >= iSMP DO
+
+         H5SMPB:= H5SMPB + Entry(iSMP,sProgsMP,"-") + sRC + "|" + sepJK + sRC;
+         iSMP := iSMP + 1;
+
+   DONE;
+
+H5SMP := Entry(1,H5SMP,">") + H5SMPB +  Entry(2,H5SMP,">");
+
+/* Variables propres au Panel MIPS */
+H1MIPS := "Librairie MIPS-ALMC (IAD221323-221324) " + sRC + sTr;
+H4MIPS := Replace(H4SMPa +  H4MIPSb  + H4SMPc,"TOTAL",sO + " Dépot 7,5µl/puits de la colonne jaune." + sf20 + sf5 + "TOTAL") ;
+
+/* Variables propres à l'extraction colonne  */
+
+H2CO := Cpad("COLONNES QIAamp MINI KIT QIAGEN",100," ");
+H3CO := Cpad("SUIVI DES LOTS REACTIFS",100, " ");
+H5CO := Replace(sRC + lPad(sO +" N" + sDg + "lot réactifs QIA AMP DNA MiniKit (Ref 51306) : ",110," ") + "#" +  sRC +
+                sRC + Fill(".",130),"#",".") + sf10 + ".";
+
+H1MD := "FT Librairie  Panel Myéloide ADN et Fusions" + sRc ;
+H1MR := Replace(H1MD,"DN","RN");
+
+H2MD := cPad("PRELEVEMENTS ADN ",120," ");
+H2MR := Replace(H2MD,"D","R");
+
+H3MD := cPad("LANCEMENT ET TRACABILITE ",100, " ");
+
+H4MD := Replace(lPad(sO  + " PREPARATION DES DILUTIONS :  pièce 618 ",108," ")                                            + "#" + sRc + sRc
+                   + sO  + " Doser au Qubit chaque dilution selon le MOLAB091 : Utilisation du Qubit. "     + sf20  + sf4 + "#" + sRc2
+                   + sO  + " Si la concentration est trop élevée, diluer les ADN au 1/10e dans de l'eau nucléase free : " + "#" + sRc + sRc
+                   + sRC + "27 µL H20 + 3 µL ADN"                                                           + sf100 + sf5 + "#" + sRC + sRc
+        ,"#",".");
+
+H5MD := Replace(sRc + sO + " Workflow Genexus : Oncomine Myeloid v2 - GX5 - DNA and Fusions - w4.3.2" + sf10 + sf7 + "#" + sRc2 
+                    + sO + " Volume ADN dans la plaque 25µL "                                         + sf80 + sf5 + "#" + sRc2 
+                    + sO + " Nom Sample du contrôle NGS dans Genexus : SERASEQ ADN"                   + sf30 + sf8 + "#" + sRc2  
+        ,"#",".");
+
+H4MR:= Replace(lPad(sO  + " PREPARATION DE LA SOLUTION DE TRAVAIL QUBIT : pièce 618 ",80," ")                             + "#" + sRc + sRc
+        ,"#",".");
+
+H5MR:= "";
+                                                                          
+/*                                                                                         TABLE DE CORRESPONDANCE LISTE - > OBJETS                                                                                           */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*    NAME LDT  #            |          HEADER            |  TITLE 1   |  TITLE 2  |   MIX 1  |    MIX 2   |     SUB-HEADER 1     |      SUB-HEADER 2       |    SUB-HEADER 3   |    SUB-HEADER 4      |    SUB-HEADER 5      */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+sFT := sFT + "EXT-MAXWELL=" + "EXTRACTION "     + sTr     +"#"+ H2RT  +"#"+ H3RT  +"#"+ H4RT   +"#"+ H5RT  +"#" + "Technique"     +"#"+ "Condition"        + "#" +"Biothèques" +"#"+ "Infos dossier" +"#"+ "Dilutions"       +"#"+"\";
+sFT := sFT + "DIL-bcr-abl=" + "DILUTIONS RT "   + sTr     +"#"+ H2RT  +"#"+ H3RT  +"#"+ H4RT   +"#"+ H5RT  +"#" + "Technique"     +"#"+ "Condition"        + "#" +"Biothèques" +"#"+ "Infos dossier" +"#"+ "Dilutions"       +"#"+"\";
+sFT := sFT + "RT-PCR-BCR= " + "RT-PCR bcr-abl " + sTr     +"#"+ H2RT  +"#"+ H3RT  +"#"+ H4RT   +"#"+ H5RT  +"#" + "Technique"     +"#"+ "Condition"        + "#" +"Biothèques" +"#"+ "Infos dossier" +"#"+ "Dilutions"       +"#"+"\";
+sFT := sFT + "EXT-EZ2=    " + "EXTRACTION EZ2 " + sTr     +"#"+ H2EZ2 +"#"+ H3EZ2 +"#"+ H4EZ2  +"#"+ H5EZ2 +"#" + "Infos dossier" +"#"+ "Condition"        + "#" +"Biothèques" +"#"+ "Identité"      +"#"+ "[C] ADN Qubit"   +"#"+"\";
+sFT := sFT + "DIL-JAK2=   " +  H1JK                       +"#"+ H2SMP +"#"+ H3SMP +"#"+ H4SMP  +"#"+ H5SMP +"#" + "Infos dossier" +"#"+ "[C] ADN Qubit SM" + "#" +"Biothèques" +"#"+ "Dilutions"     +"#"+ "[C] final ADN"   +"#"+"\";
+sFT := sFT + "PCR-JAK2=   " +  H1JK                       +"#"+ H2SMP +"#"+ H3SMP +"#"+ H4SMP  +"#"+ H5SMP +"#" + "Infos dossier" +"#"+ "[C] ADN Qubit SM" + "#" +"Biothèques" +"#"+ "Dilutions"     +"#"+ "[C] final ADN"   +"#"+"\";
+sFT := sFT + "DIL-MIPS=   " +  H1MIPS                     +"#"+ H2SMP +"#"+ H3SMP +"#"+ H4MIPS +"#"+ H5SMP +"#" + "Infos dossier" +"#"+ "[C] ADN Qubit SM" + "#" +"Biothèques" +"#"+ "Dilutions"     +"#"+ "[C] final ADN"   +"#"+"\";
+sFT := sFT + "PCR-MIPS=   " +  H1MIPS                     +"#"+ H2SMP +"#"+ H3SMP +"#"+ H4MIPS +"#"+ H5SMP +"#" + "Infos dossier" +"#"+ "[C] ADN Qubit SM" + "#" +"Biothèques" +"#"+ "Dilutions"     +"#"+ "[C] final ADN"   +"#"+"\";
+sFT := sFT + "EXT-COLONNE=" + "COLONNE "            + sTr +"#"+ H2CO  +"#"+ H3CO  +"#"+  "."   +"#"+ H5CO  +"#" + "Technique"     +"#"+ "Identité"         + "#" +"Biothèques" +"#"+ "Pureté DO"     +"#"+ "[C] ADN Nanodrop"+"#"+"\";
+sFT := sFT + "EXT-MANU="    + "PHENOL-CHLOROFORME " + sTr +"#"+ "."   +"#"+ "."   +"#"+  "."   +"#"+ "."   +"#" + "Condition"     +"#"+ "Identité"         + "#" +"Biothèques" +"#"+ "Pureté DO"     +"#"+ "[C] ARN Qubit"   +"#"+"\";
+sFT := sFT + "DIL-MYEL-ADN="+  H1MD                 + sTr +"#"+ H2MD  +"#"+ H3MD  +"#"+  H4MD  +"#"+ H5MD  +"#" + "Infos dossier" +"#"+ "[C] ADN Qubit SM" + "#" +"Biothèques" +"#"+ "Dilutions"     +"#"+ "[C] final ADN"   +"#"+"\";
+sFT := sFT + "DIL-MYEL-ARN="+  H1MR                 + sTr +"#"+ H2MR  +"#"+ H3MD  +"#"+  H4MR  +"#"+ H5MR  +"#" + "Infos dossier" +"#"+ "[C] ARN Qubit SM" + "#" +"Biothèques" +"#"+ "Dilutions"     +"#"+ "[C] final ARN"   +"#"+"\";
+
+sTable := ExtractTag(sWlt,sFT,"\");
+
+sH1:= Entry(1,sTable,"#"); sH2:= Entry(2,sTable,"#"); sH3:= Entry(3,sTable,"#"); sH4:= Entry(4,sTable,"#"); sH5 := Entry(5,sTable,"#");
+sH6:= Entry(6,sTable,"#"); sH7:= Entry(7,sTable,"#"); sH8:= Entry(8,sTable,"#"); sH9:= Entry(9,sTable,"#"); sH10:= Entry(10,sTable,"#");
+
+sCUSTH1      := "<CUSTOM1>"      + IfKnownString(sH1) + "</CUSTOM1>";
+sCUSTH2      := "<CUSTOM14>"     + IfKnownString(sH2) + "</CUSTOM14>";
+sCUSTH3      := "<CUSTOMTITLE1>" + IfKnownString(sH3) + "</CUSTOMTITLE1>";
+sCUSTH4      := "<CUSTOM16>"     + IfKnownString(sH4) + "</CUSTOM16>";
+sCUSTH5      := "<CUSTOMMIX1>"   + IfKnownString(sH5) + "</CUSTOMMIX1>";
+sCUSTH6      := "<CUSTOMN1>"     + IfKnownString(sH6) + "</CUSTOMN1>";
+sCUSTH7      := "<CUSTOMN3>"     + IfKnownString(sH7) + "</CUSTOMN3>";
+sCUSTH8      := "<CUSTOMDOS1>"   + IfKnownString(sH8) + "</CUSTOMDOS1>";
+sCUSTH9      := "<CUSTOM6>"      + IfKnownString(sH9) + "</CUSTOM6>";
+sCUSTH10     := "<CUSTOMRES>"    + IfKnownString(sH10)+ "</CUSTOMRES>";
+
+/* ??? */
+
+sCUSTMIX2    := "<CUSTOMMIX2>"   + IfKnownString("???") + "</CUSTOMMIX2>";
+sCUSTCB      := "<CUSTOMCB>" + IfKnownString("CODE BARRE") + "</CUSTOMCB>";
+sXML  := sCUSTH1 +sCUSTH2 + sCUSTH3 + sCUSTH4 +sCUSTH5 + sCUSTH6 + sCUSTH7 + sCUSTH8 + sCUSTH9 + sCUSTH10 +sCUSTMIX2 + sCUSTCB;
+
+RETURN sXML;
+}
